@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CampusConnect | Smart Campus Companion</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="{{ url_for('index') }}">
+      <span class="brand-icon">C</span>
+      <span>Campus<span class="brand-accent">Connect</span><small>SMART CAMPUS COMPANION</small></span>
+    </a>
+
+    {% if session.get('user_id') %}
+    {% if session.get('role') == 'admin' %}
+  <a class="top-link" href="{{ url_for('admin_dashboard') }}">
+    Admin Dashboard
+  </a>
+{% endif %}
+      <span class="top-link">
+        Hi, {{ session.get('username') }}
+        {% if session.get('role') == 'admin' %} · Admin{% endif %}
+      </span>
+      <form method="post" action="{{ url_for('logout') }}" style="display:inline">
+        <button type="submit" class="top-link">Log out</button>
+      </form>
+    {% else %}
+      <a class="top-link" href="{{ url_for('login') }}">Log in</a>
+      <a class="top-link" href="{{ url_for('register') }}">Register</a>
+    {% endif %}
+  </header>
+
+  <main class="page">
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="live-dot"></span> YOUR CAMPUS, CONNECTED</div>
+        <h1>Everything happening<br><span>on campus.</span></h1>
+        <p>Discover announcements, join events, and help your campus community find what’s lost.</p>
+        <a class="primary-btn" href="#feed">Explore campus <span>↘</span></a>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="orb orb-one"></div><div class="orb orb-two"></div>
+        <div class="art-card card-back"><span>✦</span><b>Learn together.</b></div>
+        <div class="art-card card-front"><div class="mini-icon">⌂</div><b>Campus life</b><small>All in one place</small><div class="art-bars"><i></i><i></i><i></i><i></i><i></i></div></div>
+        <div class="float-tag">✦ Student community</div>
+      </div>
+    </section>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for kind, message in messages %}
+          <div class="flash {{ kind }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <section class="stats" aria-label="Campus post summary">
+      <div class="stat"><span class="stat-icon purple">▤</span><div><strong>{{ counts.all }}</strong><small>Total posts</small></div></div>
+      <div class="stat"><span class="stat-icon blue">◉</span><div><strong>{{ counts.notice }}</strong><small>Notices</small></div></div>
+      <div class="stat"><span class="stat-icon orange">✦</span><div><strong>{{ counts.event }}</strong><small>Events</small></div></div>
+      <div class="stat"><span class="stat-icon green">⌕</span><div><strong>{{ counts.lost }}</strong><small>Lost & found</small></div></div>
+    </section>
+
+    <section class="content-grid">
+      <div class="feed-section" id="feed">
+        <div class="section-heading">
+          <div><div class="eyebrow">CAMPUS BOARD</div><h2>Latest updates</h2></div>
+          <span class="result-count">{{ posts|length }} result{% if posts|length != 1 %}s{% endif %}</span>
+        </div>
+        <form class="search-row" method="get" action="{{ url_for('index') }}">
+          <label class="search-box"><span>⌕</span><input name="q" value="{{ search }}" placeholder="Search campus updates..." aria-label="Search campus updates"></label>
+          <select name="category" aria-label="Filter by category">
+            {% for option in ['All', 'Notice', 'Event', 'Lost & Found'] %}
+              <option value="{{ option }}" {% if category == option %}selected{% endif %}>{{ option }}</option>
+            {% endfor %}
+          </select>
+          <button class="search-btn" type="submit">Search</button>
+        </form>
+
+        <div class="post-list">
+          {% for post in posts %}
+            <article class="post-card">
+              <div class="post-symbol {% if post.category == 'Notice' %}symbol-notice{% elif post.category == 'Event' %}symbol-event{% else %}symbol-lost{% endif %}">
+                {% if post.category == 'Notice' %}▤{% elif post.category == 'Event' %}✦{% else %}⌕{% endif %}
+              </div>
+              <div class="post-main">
+                <div class="post-meta"><span class="pill {% if post.category == 'Notice' %}pill-notice{% elif post.category == 'Event' %}pill-event{% else %}pill-lost{% endif %}">{{ post.category }}</span><span>{{ post.created_at }}</span></div>
+                <h3>{{ post.title }}</h3>
+                <p>{{ post.description }}</p>
+                {% if post.location or post.contact %}
+                  <div class="post-details">
+                    {% if post.location %}<span>⌖ {{ post.location }}</span>{% endif %}
+                    {% if post.contact %}<span>♧ {{ post.contact }}</span>{% endif %}
+                  </div>
+                {% endif %}
+              </div>
+              {% if session.get('role') == 'admin' %}
+              <form class="delete-form" method="post" action="{{ url_for('delete_post', post_id=post.id) }}" onsubmit="return confirm('Delete this post?')">
+                <button class="delete-btn" type="submit" title="Delete post" aria-label="Delete {{ post.title }}">×</button>
+              </form>
+              {% endif %}
+            </article>
+          {% else %}
+            <div class="empty-state"><div>⌕</div><h3>No updates found</h3><p>Try a different search, or create the first post.</p></div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <aside class="side-column" id="add-post">
+        {% if session.get('user_id') %}
+        <div class="form-card">
+          <div class="form-heading"><span class="form-icon">＋</span><div><div class="eyebrow">SHARE WITH EVERYONE</div><h2>Create a post</h2></div></div>
+          <p class="form-intro">Have an update for your campus? Add it to the board.</p>
+          <form method="post" action="{{ url_for('add_post') }}" class="post-form">
+            <label>Post category <span>*</span>
+              <select name="category" required>
+                <option value="Notice">Notice</option><option value="Event">Event</option><option value="Lost & Found">Lost & Found</option>
+              </select>
+            </label>
+            <label>Title <span>*</span><input name="title" required maxlength="100" placeholder="e.g. Coding club meetup"></label>
+            <label>Description <span>*</span><textarea name="description" required maxlength="600" rows="4" placeholder="Share the details with students..."></textarea></label>
+            <label>Location <input name="location" maxlength="100" placeholder="e.g. Library, Block A"></label>
+            <label>Contact / department <input name="contact" maxlength="100" placeholder="e.g. Student Council"></label>
+            <button class="submit-btn" type="submit">Publish post <span>→</span></button>
+          </form>
+        </div>
+        {% else %}
+        <div class="form-card">
+          <h2>Join CampusConnect</h2>
+          <p class="form-intro">
+            Log in with your student account to publish a campus update.
+          </p>
+          <a class="primary-btn" href="{{ url_for('login') }}">Log in</a>
+          <p>New here? <a href="{{ url_for('register') }}">Register</a></p>
+        </div>
+        {% endif %}
+        <div class="tip-card"><span>✦</span><div><b>Community tip</b><p>Keep posts clear, helpful, and respectful. Don’t share private information.</p></div></div>
+      </aside>
+    </section>
+    <footer>Made for students, by students <span>•</span> CampusConnect College Project</footer>
+  </main>
+</body>
+</html>

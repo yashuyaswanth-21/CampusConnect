@@ -1,0 +1,146 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin Dashboard | CampusConnect</title>
+  <link rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .admin-page { max-width: 1150px; margin: 35px auto; padding: 0 20px; }
+    .admin-heading { display:flex; justify-content:space-between;
+      align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:25px; }
+    .admin-heading h1 { margin:0; }
+    .admin-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+      gap:16px; margin-bottom:28px; }
+    .admin-stat, .admin-panel { background:var(--card, #fff);
+      border:1px solid #e5e7eb; border-radius:16px; padding:20px;
+      box-shadow:0 4px 18px rgba(20,30,60,.05); }
+    .admin-stat p { margin:0 0 8px; color:#64748b; }
+    .admin-stat strong { font-size:30px; }
+    .admin-panel { margin-bottom:24px; overflow-x:auto; }
+    .admin-panel h2 { margin-top:0; font-size:20px; }
+    .admin-table { width:100%; border-collapse:collapse; min-width:520px; }
+    .admin-table th, .admin-table td { text-align:left; padding:12px;
+      border-bottom:1px solid #e5e7eb; }
+    .admin-table th { color:#64748b; font-size:13px; }
+    .admin-badge { display:inline-block; background:#eeeaff;
+      color:#5541b8; padding:5px 10px; border-radius:20px; }
+    .admin-actions { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .admin-link { text-decoration:none; padding:10px 14px;
+      border-radius:9px; background:#eeeaff; color:#4338a8; }
+    @media(max-width:600px) {
+      .admin-page { padding:0 12px; margin-top:22px; }
+      .admin-stat, .admin-panel { padding:15px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="{{ url_for('index') }}">
+      <span class="brand-icon">C</span>
+      <span>Campus<span class="brand-accent">Connect</span>
+        <small>ADMIN DASHBOARD</small>
+      </span>
+    </a>
+    <div class="admin-actions">
+      <a class="admin-link" href="{{ url_for('index') }}">Campus Home</a>
+      <form method="post" action="{{ url_for('logout') }}">
+        <button class="admin-link" type="submit">Log out</button>
+      </form>
+    </div>
+  </header>
+
+  <main class="admin-page">
+    <div class="admin-heading">
+      <div>
+        <h1>Admin Dashboard</h1>
+        <p>Welcome, {{ session.get('username') }}.</p>
+      </div>
+      <span class="admin-badge">Administrator</span>
+    </div>
+
+    <section class="admin-stats">
+      <div class="admin-stat">
+        <p>Total accounts</p>
+        <strong>{{ total_users }}</strong>
+      </div>
+      <div class="admin-stat">
+        <p>Students</p>
+        <strong>{{ total_students }}</strong>
+      </div>
+      <div class="admin-stat">
+        <p>Administrators</p>
+        <strong>{{ total_admins }}</strong>
+      </div>
+      <div class="admin-stat">
+        <p>Campus posts</p>
+        <strong>{{ total_posts }}</strong>
+      </div>
+    </section>
+
+    <section class="admin-panel">
+      <h2>Posts by category</h2>
+      {% if category_counts %}
+        <table class="admin-table">
+          <thead><tr><th>Category</th><th>Total posts</th></tr></thead>
+          <tbody>
+          {% for item in category_counts %}
+            <tr>
+              <td>{{ item['category'] }}</td>
+              <td>{{ item['total'] }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p>No posts yet.</p>
+      {% endif %}
+    </section>
+
+    <section class="admin-panel">
+      <h2>Registered accounts</h2>
+      <table class="admin-table">
+        <thead>
+          <tr><th>ID</th><th>Username</th><th>Email</th><th>Role</th></tr>
+        </thead>
+        <tbody>
+        {% for user in users %}
+          <tr>
+            <td>{{ user['id'] }}</td>
+            <td>{{ user['username'] }}</td>
+            <td>{{ user['email'] }}</td>
+            <td><span class="admin-badge">{{ user['role'] }}</span></td>
+          </tr>
+        {% else %}
+          <tr><td colspan="4">No accounts found.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <section class="admin-panel">
+      <h2>10 most recent campus posts</h2>
+      <table class="admin-table">
+        <thead>
+          <tr><th>ID</th><th>Title</th><th>Category</th><th>Location</th><th>Date</th></tr>
+        </thead>
+        <tbody>
+        {% for post in recent_posts %}
+          <tr>
+            <td>{{ post['id'] }}</td>
+            <td>{{ post['title'] }}</td>
+            <td>{{ post['category'] }}</td>
+            <td>{{ post['location'] or '—' }}</td>
+            <td>{{ post['created_at'] }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="5">No posts found.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </section>
+  </main>
+</body>
+</html>
